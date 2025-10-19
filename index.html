@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>בינה מלאכותית לניהול תיק לקוח – הצעה אינטראקטיבית</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:#121827;
+      --muted:#c8d0e0;
+      --text:#eaf0ff;
+      --accent:#62e0ff;
+      --accent-2:#7c8cff;
+      --success:#38ef7d;
+      --warning:#ffd166;
+      --danger:#ff6b6b;
+      --shadow:0 12px 40px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    .light{
+      --bg:#f6f8ff;
+      --panel:#ffffff;
+      --muted:#58627a;
+      --text:#0e1321;
+      --accent:#0066ff;
+      --accent-2:#7a5cff;
+      --success:#12a454;
+      --warning:#b88900;
+      --danger:#c92a2a;
+      --shadow:0 10px 26px rgba(0,0,0,.10);
+    }
+    html,body{height:100%}
+    body{
+      margin:0;background:radial-gradient(1400px 800px at 80% -10%, rgba(98,224,255,.10), transparent 60%),
+      radial-gradient(1200px 700px at 10% 110%, rgba(124,140,255,.12), transparent 60%), var(--bg);
+      color:var(--text); font-family:Heebo, Alef, "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    .container{max-width:1100px;margin:0 auto;padding:28px}
+    header.hero{position:sticky;top:0;backdrop-filter:blur(10px);background:linear-gradient(to bottom,rgba(0,0,0,.35),transparent), var(--bg); z-index:5}
+    header.hero .wrap{display:flex;gap:18px;align-items:center;justify-content:space-between;padding:16px 28px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{height:42px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.25))}
+    .brand h1{font-size:18px;margin:0;letter-spacing:.02em}
+    .toolbar{display:flex;gap:10px;align-items:center}
+    .btn{border:0;border-radius:14px;padding:10px 14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:#fff; font-weight:700; box-shadow:var(--shadow); cursor:pointer; transition:transform .12s ease}
+    .btn.flat{background:transparent;border:1px solid rgba(255,255,255,.18); color:var(--text)}
+    .btn:hover{transform:translateY(-1px)}
+    .grid{display:grid;gap:18px}
+    .cols-2{grid-template-columns:repeat(2,1fr)}
+    @media (max-width:900px){.cols-2{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10); border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden; position:relative}
+    .card .hd{display:flex;align-items:center;justify-content:space-between; gap:10px; padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.08)}
+    .card .hd h2, .card .hd h3{margin:0;font-size:20px}
+    .card .bd{padding:18px 20px}
+
+    /* Collapsible */
+    details{background:var(--panel); border-radius:16px; border:1px solid rgba(255,255,255,.10); box-shadow:var(--shadow); overflow:hidden}
+    details + details{margin-top:14px}
+    summary{cursor:pointer; list-style:none; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:14px; font-weight:800; color:var(--text)}
+    summary::-webkit-details-marker{display:none}
+    .caret{inline-size:18px; block-size:18px; display:inline-grid; place-items:center; transform:rotate(180deg); transition:transform .2s ease}
+    details[open] .caret{transform:rotate(0)}
+    .content{padding:0 22px 18px}
+
+    /* Pills / tags */
+    .tag{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); font-weight:700; font-size:12px}
+    .tag .dot{width:8px;height:8px;border-radius:50%}
+
+    /* Timeline */
+    .timeline{position:relative;padding:10px 0 0 0}
+    .timeline::before{content:"";position:absolute;inset-inline-start:20px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--accent),transparent)}
+    .tl-item{display:grid; grid-template-columns:48px 1fr; gap:12px; padding:10px 0}
+    .tl-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(98,224,255,.18); margin-top:4px; margin-inline-start:13px}
+    .tl-body{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:12px 14px}
+
+    /* Tables */
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px dashed rgba(255,255,255,.18)}
+    th{text-align:right; font-size:13px; letter-spacing:.02em; color:var(--muted)}
+
+    /* Search highlight */
+    mark{background:rgba(255,255,0,.35); padding:0 2px; border-radius:4px}
+
+    /* Footer (as provided) */
+    .footer{margin-top:40px;padding:24px 0;border-top:1px solid rgba(255,255,255,.12);background:transparent}
+    .powered-by{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:14px;}
+    .powered-by span{font-weight:700;letter-spacing:.02em;color:var(--muted);}
+    .powered-by img{height:50px;width:auto;display:block;filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));}
+    .powered-by a { display:flex; align-items:center; gap:10px; text-decoration:none; }
+
+    /* Small motion */
+    [data-animate]{opacity:0; transform:translateY(10px); animation:rise .5s ease forwards}
+    @keyframes rise{to{opacity:1; transform:none}}
+      /* Notes */
+    .note{margin-top:8px;font-size:12px;color:var(--muted)}
+
+    /* Hide prices toggle */
+    .hide-prices .price{display:none}
+      /* Typography scale & alignment */
+    :root{--fs-xs:12px;--fs-sm:14px;--fs-base:16px;--fs-md:18px;--fs-lg:20px;--fs-xl:24px}
+    body{font-size:var(--fs-base)}
+    h1,h2,h3,summary,table,th,td,ul,li,p,.btn,.tag{font-family:inherit}
+    .brand h1{font-size:var(--fs-md);font-weight:800}
+    .card .hd h2{font-size:var(--fs-lg);font-weight:800}
+    .card .hd h3,.content h3{font-size:var(--fs-md);font-weight:800}
+    summary{font-size:var(--fs-base);font-weight:800}
+    .tag{font-size:var(--fs-sm)}
+    table,th,td,ul,li,p{font-size:var(--fs-base)}
+    .btn{font-size:var(--fs-sm)}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand">
+        <img src="https://i.ibb.co/bj2NWCq3/AM-Logo-white-blue-glow.png" alt="AM Consulting">
+        <h1>בינה מלאכותית לניהול תיק לקוח – חברת פוקוס</h1>
+      </div>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="חיפוש בהצעה…" aria-label="חיפוש" class="btn flat" style="width:220px" />
+        <button class="btn flat" id="toggleTheme" aria-pressed="false">מצב כהה/בהיר</button>
+        <button class="btn" id="expandAll">פתח הכל</button>
+        <button class="btn" id="collapseAll">סגור הכל</button>
+        <button class="btn flat" id="togglePrices">הצג/הסתר מחירים</button>
+        <button class="btn flat" id="printBtn">הדפס/שמור PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" data-animate>
+      <div class="hd">
+        <h2>סיכום מנהלים</h2>
+        <span class="tag"><span class="dot" style="background:var(--success)"></span>פרויקט מדורג</span>
+      </div>
+      <div class="bd">
+        <p>AM Consulting שמחה להוביל את חברת פוקוס השקעות בפרויקט אסטרטגי להטמעת פתרון בינה מלאכותית שמטרתו לייעל את תהליך ניתוח תיק הלקוח והפקת הצעת ערך מותאמת אישית לאחר הפגישה הראשונה. המיזם נועד לשפר יעילות, להאיץ זמני תגובה, להבטיח רמת דיוק גבוהה בהמלצות – תוך שמירה מלאה על פרטיות, עמידה ברגולציה ובקרה אנושית.</p>
+        <div class="grid cols-2">
+          <div>
+            <h3>מתווה שלבים</h3>
+            <ul>
+              <li>חקר ואבחון (2–3 שבועות)</li>
+              <li>הוכחת יכולת – POC (3–4 שבועות)</li>
+              <li>תכנון המערכת (2–3 שבועות)</li>
+              <li>יישום (6–8 שבועות)</li>
+              <li>תחזוקה (מתמשך)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>תועלות מרכזיות</h3>
+            <ul>
+              <li>האצה משמעותית של זמן להפקת הצעת ערך</li>
+              <li>שיפור עקביות ואיכות ההמלצות</li>
+              <li>שילוב בקרה אנושית ותיעוד מלא</li>
+              <li>עמידה בדרישות רגולציה ופרטיות</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>חמשת שלבי הפרויקט</h2></div>
+        <div class="bd">
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot"></div><div class="tl-body"><strong>חקר ואבחון:</strong> מיפוי תהליכים, איכות וזרימות נתונים, סיכונים ורגולציה, והמלצה לתשתית.</div></div>
+            <div class="tl-item"><div class="tl-dot"></div><div class="tl-body"><strong>הוכחת יכולת (POC):</strong> אבטיפוס שמדגים ערך, משוב עסקי ומדדי הצלחה לקבלת החלטת GO/NO-GO.</div></div>
+            <div class="tl-item"><div class="tl-dot"></div><div class="tl-body"><strong>תכנון המערכת:</strong> אפיון, ארכיטקטורה, אינטגרציות, אבטחה וממשקי משתמש.</div></div>
+            <div class="tl-item"><div class="tl-dot"></div><div class="tl-body"><strong>יישום:</strong> פיתוח, אינטגרציה לייצור, הדרכה והפעלה הדרגתית.</div></div>
+            <div class="tl-item"><div class="tl-dot"></div><div class="tl-body"><strong>תחזוקה:</strong> ניטור, ניהול תקלות, עדכוני מודלים ותוכן, ושיפור מתמשך.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd">
+          <h2>פירוט לפי שלב – תתי־שלבים</h2>
+        </div>
+        <div class="bd">
+          <!-- Step 1: Discovery & Assessment -->
+          <details>
+            <summary>
+              <span>שלב 1 – חקר ואבחון</span>
+              <span class="caret">⌄</span>
+            </summary>
+            <div class="content">
+              <p><strong>מטרה:</strong> יצירת תמונת מצב מלאה של התהליכים, המערכות, איכות הנתונים והסיכונים.</p>
+              <ul>
+                <li>תרשים תהליך קיים ומיפוי מערכות ותלויות.</li>
+                <li>דוח זמינות ואיכות נתונים (Data Readiness).</li>
+                <li>ניתוח סיכונים ורגולציה והמלצה לתשתית טכנולוגית מתאימה.</li>
+                <li>הגדרת אתגר מרכזי לפיילוט (POC Scope).</li>
+              </ul>
+              <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~2–3 שבועות</p>
+            </div>
+          </details>
+
+          <!-- Step 2: POC -->
+          <details>
+            <summary>
+              <span>שלב 2 – הוכחת יכולת (POC)</span>
+              <span class="caret">⌄</span>
+            </summary>
+            <div class="content">
+              <p><strong>מטרה:</strong> הדגמה ממוקדת של ערך ויכולת התמודדות עם האתגרים שהוגדרו בשלב החקר.</p>
+              <ul>
+                <li>בניית אבטיפוס שמפיק הצעת ערך מבוססת נתוני לקוח.</li>
+                <li>בדיקות איכות ומדדי הצלחה; איסוף משוב יחידה עסקית.</li>
+                <li>מסמך הערכת הצלחה והחלטת GO/NO-GO.</li>
+              </ul>
+              <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~3–4 שבועות</p>
+            </div>
+          </details>
+
+          <!-- Step 3: System Design -->
+          <details>
+            <summary>
+              <span>שלב 3 – תכנון המערכת</span>
+              <span class="caret">⌄</span>
+            </summary>
+            <div class="content">
+              <p><strong>מטרה:</strong> תרגום התובנות מארבעת השלבים למסמך אפיון, ארכיטקטורה ואינטגרציה מוכנים ליישום.</p>
+              <ul>
+                <li>מסמך אפיון טכני מלא וארכיטקטורת מידע.</li>
+                <li>תוכנית אינטגרציה עם CRM/DMS וכלי BI; תכנון תבניות ו־UI.</li>
+                <li>הגדרות אבטחה, בקרות גישה, ניטור ותאימות לרגולציה.</li>
+              </ul>
+              <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~2–3 שבועות</p>
+            </div>
+          </details>
+
+          <!-- Step 4: Implementation (keeps sub-steps) -->
+          <details open>
+            <summary>
+              <span>שלב 4 – יישום</span>
+              <span class="caret">⌄</span>
+            </summary>
+            <div class="content">
+              <p><strong>מטרה:</strong> פיתוח, אינטגרציה והפעלה הדרגתית בסביבת ייצור, כולל הדרכה והעברת ידע.</p>
+
+              <!-- Substep 1 -->
+              <details open>
+                <summary>
+                  <span>1) תשתיות ונתונים (Infrastructure & Data Foundations)</span>
+                  <span class="caret">⌄</span>
+                </summary>
+                <div class="content">
+                  <ul>
+                    <li>הקמת סביבת ענן, CICD בסיסי והקשחת אבטחה.</li>
+                    <li>חיבורים ל־CRM, DMS וכלי BI; תעלות נתונים (ETL/ELT).</li>
+                    <li>ניקוי והעשרת נתונים; בקרות איכות ומטאדאטה.</li>
+                    <li>פרטיות, הרשאות וציות לרגולציה.</li>
+                  </ul>
+                  <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~שבועיים</p>
+                </div>
+              </details>
+
+              <!-- Substep 2 -->
+              <details>
+                <summary>
+                  <span>2) פיתוח מודלים ויכולות בינה (Model Development & Training)</span>
+                  <span class="caret">⌄</span>
+                </summary>
+                <div class="content">
+                  <ul>
+                    <li>Fine-tuning למודלים על נתוני פוקוס; מדדי דיוק והסבר.</li>
+                    <li>בדיקות איכות; פייפליין MLOps לגרסאות ושחזור.</li>
+                    <li>בדיקות Bias ותיעוד חישובי.</li>
+                  </ul>
+                  <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~שלושה שבועות</p>
+                </div>
+              </details>
+
+              <!-- Substep 3 -->
+              <details>
+                <summary>
+                  <span>3) אינטגרציה וחוויית משתמש (Integration & UX)</span>
+                  <span class="caret">⌄</span>
+                </summary>
+                <div class="content">
+                  <ul>
+                    <li>UI להצגת תובנות והצעות ערך; Human-in-the-loop.</li>
+                    <li>אינטגרציה ל־CRM/ייצור; הרשאות לפי תפקיד.</li>
+                    <li>הדרכת צוותים והעברת ידע.</li>
+                  </ul>
+                  <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~שבועיים</p>
+                </div>
+              </details>
+
+              <!-- Substep 4 -->
+              <details>
+                <summary>
+                  <span>4) בקרה, אופטימיזציה ותחזוקה שוטפת (Monitoring & Continuous Improvement)</span>
+                  <span class="caret">⌄</span>
+                </summary>
+                <div class="content">
+                  <ul>
+                    <li>דשבורדים לניטור ביצועים והתראות.</li>
+                    <li>עדכוני מודלים/תוכן על בסיס משוב ורגולציה.</li>
+                    <li>ניהול תקלות ותמיכה שוטפת.</li>
+                  </ul>
+                  <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: ~שבוע + תחזוקה מתמשכת</p>
+                </div>
+              </details>
+
+              <p class="tag"><span class="dot" style="background:var(--accent)"></span>משך כולל: 6–8 שבועות | <span class="price">320,000 ₪</span></p>
+            </div>
+          </details>
+
+          <!-- Step 5: Operations & Maintenance -->
+          <details>
+            <summary>
+              <span>שלב 5 – תחזוקה</span>
+              <span class="caret">⌄</span>
+            </summary>
+            <div class="content">
+              <p><strong>מטרה:</strong> שמירה על יציבות, דיוק ובטיחות המערכת לאורך זמן והמשך שיפור.</p>
+              <ul>
+                <li>ניטור רציף של ביצועים, זמינות וזמני תגובה.</li>
+                <li>עדכון מודלים, תכנים ותבניות לפי התפתחויות בשוק וברגולציה.</li>
+                <li>הפעלת מוקד תמיכה; ניהול תקלות ושחרורי גרסה.</li>
+              </ul>
+              <p class="tag"><span class="dot" style="background:var(--warning)"></span>היקף: מתמשך | <span class="price">עלות בהתאם לצורך</span></p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>תכולה ותוצרים לפי שלב</h2></div>
+        <div class="bd">
+          <details>
+            <summary><span>שלב 1 – חקר ואבחון</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>תרשים תהליך קיים ומיפוי מערכות; דוח זמינות ואיכות נתונים; ניתוח סיכונים ורגולציה; הגדרת אתגר מרכזי לפיילוט; המלצה לתשתית מתאימה.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary><span>שלב 2 – הוכחת יכולת (POC)</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>אבטיפוס להפקת הצעת ערך; בדיקות ערך מול היחידה העסקית; מסמך הצלחה והחלטת GO/NO-GO.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary><span>שלב 3 – תכנון המערכת</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>מסמך אפיון מלא; ארכיטקטורה; תוכנית אינטגרציה; תכנון UI; הגדרות אבטחה, ניטור ובקרות גישה.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary><span>שלב 4 – יישום</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>פיתוח והטמעה הדרגתית; ניהול תקלות; ניתוח ביצועים; עדכוני מודלים/תוכן לפי צורך.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary><span>שלב 5 – תחזוקה</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>מערכת חיה ופעילה; ממשק ליועצים עם בקרה; חיבור מלא ל־CRM; הדרכות והכשרות לפי צורך.</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>עלויות</h2></div>
+        <div class="bd">
+          <details open>
+            <summary><span>טבלת עלויות לפי שלב</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <table>
+                <thead><tr><th>שלב</th><th>עלות</th><th>הערות</th></tr></thead>
+                <tbody>
+                  <tr><td>חקר ואבחון</td><td><span class="price">55,000 ₪</span></td><td>כולל מיפוי ותשתית המלצה</td></tr>
+                  <tr><td>הוכחת יכולת (POC)</td><td><span class="price">130,000 ₪</span></td><td>אבטיפוס ומדדי הצלחה</td></tr>
+                  <tr><td>תכנון המערכת</td><td><span class="price">75,000 ₪</span></td><td>אפיון, ארכיטקטורה ואינטגרציות</td></tr>
+                  <tr><td><strong>יישום</strong></td><td><strong class="price">320,000 ₪</strong></td><td><strong>פיתוח והטמעה</strong></td></tr>
+                  <tr><td>תחזוקה</td><td><span class="price">בהתאם לצורך</span></td><td>שדרוגים ושיפור מתמשך</td></tr>
+                  <tr><td><strong>סה"כ</strong></td><td><strong class="price">580,000 ₪</strong></td><td>—</td></tr>
+                </tbody>
+              </table>
+              <p class="note">* מחירים לפני מעמ</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>לוחות זמנים</h2></div>
+        <div class="bd">
+          <details open>
+            <summary><span>פירוט זמן לכל שלב</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li><strong>חקר ואבחון:</strong> 2–3 שבועות</li>
+                <li><strong>POC:</strong> 3–4 שבועות</li>
+                <li><strong>תכנון המערכת:</strong> 2–3 שבועות</li>
+                <li><strong>יישום:</strong> 6–8 שבועות</li>
+                <li><strong>תחזוקה:</strong> מתמשך</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>תפקידים נדרשים</h2></div>
+        <div class="bd">
+          <details open>
+            <summary><span>הרכב צוות ותפקידים</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <table>
+                <thead><tr><th>תפקיד</th><th>אחריות</th></tr></thead>
+                <tbody>
+                  <tr><td>מנהל מוצר</td><td>הגדרת דרישות, תעדוף, ותיאום מול המשתמשים.</td></tr>
+                  <tr><td>מהנדס נתונים</td><td>הכנת, ניקוי וסידור הנתונים; בניית תעלות נתונים.</td></tr>
+                  <tr><td>חוקר/ת AI</td><td>פיתוח, כוונון וולידציה של מודלים.</td></tr>
+                  <tr><td>מהנדס ענן</td><td>הקמה ותפעול סביבת הענן, אבטחה וניטור.</td></tr>
+                  <tr><td>מפתח פול־סטאק</td><td>UI ו־Backend; אינטגרציה למערכות קיימות.</td></tr>
+                  <tr><td>מומחה אבטחת מידע</td><td>הקשחת מערכות, ניהול הרשאות וציות רגולטורי.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:18px" data-animate>
+      <div class="card">
+        <div class="hd"><h2>מדדי הצלחה (KPIs)</h2></div>
+        <div class="bd">
+          <details open>
+            <summary><span>מדדים ותנאי סף</span><span class="caret">⌄</span></summary>
+            <div class="content">
+              <ul>
+                <li>זמן מחזור להפקת הצעת ערך (TAT) – יעד: קיצור משמעותי מול בסיס.</li>
+                <li>דיוק והסבריות ההמלצות – יעד: עמידה בסף מוסכם עם הנהלה.</li>
+                <li>שביעות רצון יועצים – יעד: ≥ 4/5 בסקר משתמשים.</li>
+                <li>ציות מלא למדיניות פרטיות ורגולציה.</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="powered-by">
+          <a href="https://www.amconsultingai.com" target="_blank" rel="noopener" aria-label="Visit AM Consulting">
+            <span>Powered by</span>
+            <img src="https://i.ibb.co/bj2NWCq3/AM-Logo-white-blue-glow.png" alt="AM Consulting logo" />
+          </a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    // Theme toggle
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+    toggleThemeBtn.addEventListener('click',()=>{
+      document.body.classList.toggle('light');
+      const pressed = toggleThemeBtn.getAttribute('aria-pressed') === 'true';
+      toggleThemeBtn.setAttribute('aria-pressed', String(!pressed));
+    });
+
+    // Expand / collapse
+    const expandAllBtn = document.getElementById('expandAll');
+    const collapseAllBtn = document.getElementById('collapseAll');
+    expandAllBtn.addEventListener('click',()=>{
+      document.querySelectorAll('details').forEach(d=>d.open = true);
+    });
+    collapseAllBtn.addEventListener('click',()=>{
+      document.querySelectorAll('details').forEach(d=>d.open = false);
+    });
+
+    
+
+    // Toggle prices visibility
+    const togglePricesBtn = document.getElementById('togglePrices');
+    togglePricesBtn.addEventListener('click', ()=>{
+      document.body.classList.toggle('hide-prices');
+    });
+
+    // Search highlight across text nodes
+    const searchInput = document.getElementById('search');
+    let marks=[];
+    function clearMarks(){marks.forEach(m=>{const t=m.textContent;m.replaceWith(document.createTextNode(t))});marks=[]}
+    function highlight(term){
+      if(!term){clearMarks();return}
+      const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>/^[\s\n]*$/.test(n.nodeValue)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+      clearMarks();
+      const re=new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+      let node; while(node=walker.nextNode()){
+        const m=node.nodeValue.match(re); if(!m) continue;
+        const frag=document.createDocumentFragment();
+        let last=0; node.nodeValue.replace(re,(match,idx)=>{
+          frag.appendChild(document.createTextNode(node.nodeValue.slice(last,idx)));
+          const mk=document.createElement('mark'); mk.textContent=match; frag.appendChild(mk); marks.push(mk); last=idx+match.length;
+        });
+        frag.appendChild(document.createTextNode(node.nodeValue.slice(last)));
+        node.parentNode.replaceChild(frag,node);
+      }
+    }
+    searchInput.addEventListener('input',e=>highlight(e.target.value.trim()))
+
+    // Animate on load
+    document.querySelectorAll('[data-animate]').forEach((el,i)=>{
+      el.style.animationDelay = (i*90)+'ms'
+    })
+  </script>
+</body>
+</html>
